@@ -1,13 +1,14 @@
 import aiohttp
-import json
-import os
+import asyncio
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
-from astrbot.api.message_components import Plain
 
-@register("astrbot_plugin_oneword", "你的名字", "发送群指令 aword 获取随机一言", "1.0.0")
+@register("astrbot_plugin_xuan_aword", "你的名字", "发送群指令 aword 获取随机一言", "1.0.0")
 class OneWordPlugin(Star):
     def __init__(self, context: Context):
+        # 兼容性处理：确保 context 有 scheduler 属性（避免旧版本 AstrBot 报错）
+        if not hasattr(context, 'scheduler'):
+            context.scheduler = None
         super().__init__(context)
 
     @filter.command("aword")
@@ -16,7 +17,6 @@ class OneWordPlugin(Star):
         yield event.plain_result("正在寻章摘句，请稍候...")
 
         try:
-            # 调用一言 API
             async with aiohttp.ClientSession() as session:
                 async with session.get("https://v1.hitokoto.cn", timeout=10) as resp:
                     if resp.status != 200:
@@ -24,12 +24,10 @@ class OneWordPlugin(Star):
                         return
                     data = await resp.json()
 
-            # 从返回的 JSON 中提取信息
-            hitokoto = data.get("hitokoto", "")  # 一言内容
-            from_who = data.get("from_who")      # 说话者（可能为 null）
-            from_text = data.get("from", "")      # 来源作品
+            hitokoto = data.get("hitokoto", "")
+            from_who = data.get("from_who")
+            from_text = data.get("from", "")
 
-            # 构建来源字符串
             source_parts = []
             if from_who:
                 source_parts.append(from_who)
@@ -37,7 +35,6 @@ class OneWordPlugin(Star):
                 source_parts.append(f"《{from_text}》")
             source = " —— ".join(source_parts) if source_parts else ""
 
-            # 拼接最终消息
             message = f"📖 {hitokoto}"
             if source:
                 message += f"\n{source}"
