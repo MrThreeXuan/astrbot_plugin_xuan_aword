@@ -1,6 +1,4 @@
 import aiohttp
-import json
-import os
 import asyncio
 from datetime import datetime
 from astrbot.api.event import filter, AstrMessageEvent
