@@ -1,0 +1,1 @@
+# astrbot_plugin_xuan_aword
